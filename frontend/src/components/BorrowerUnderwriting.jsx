@@ -75,7 +75,9 @@ export default function BorrowerUnderwriting() {
     if (!uploadFile) return;
     setBusy(true); setError("");
     try {
-      const id = draftSaved && applicationId ? applicationId : await saveDraft();
+      // Documents can be uploaded before the borrower has completed their profile.
+      // Save the current draft first so the upload always attaches to its application.
+      const id = await saveDraft();
       await uploadUnderwritingDocument(id, uploadCategory, uploadFile);
       setDocuments(await fetchUnderwritingDocuments(id));
       setAnalysis(null);
@@ -162,7 +164,7 @@ export default function BorrowerUnderwriting() {
             return <div className={`ru-required-upload-card${uploaded ? " is-uploaded" : ""}`} key={requiredCategory}>
               <div className="ru-required-upload-heading"><strong>{label}</strong><small>{uploaded ? "Received" : "Required"}</small></div>
               <label className="ru-field">Choose PDF, PNG, or JPEG<input id={`borrower-document-${requiredCategory}`} type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" onChange={(event) => setRequiredFiles((current) => ({ ...current, [requiredCategory]: event.target.files?.[0] || null }))} /></label>
-              <button type="button" className="ru-secondary-button" disabled={!complete || !requiredFiles[requiredCategory] || busy} onClick={() => upload(requiredCategory, requiredFiles[requiredCategory])}>{busy ? "Working…" : uploaded ? "Upload another" : `Upload ${label}`}</button>
+              <button type="button" className="ru-secondary-button" disabled={!requiredFiles[requiredCategory] || busy} onClick={() => upload(requiredCategory, requiredFiles[requiredCategory])}>{busy ? "Working…" : uploaded ? "Upload another" : `Upload ${label}`}</button>
             </div>;
           })}
         </div>
@@ -172,10 +174,10 @@ export default function BorrowerUnderwriting() {
             <label className="ru-field">Evidence type<select value={otherCategory} onChange={(event) => setOtherCategory(event.target.value)}>{DOCUMENT_TYPES.filter(([value]) => !REQUIRED_DOCUMENTS.some(([required]) => required === value)).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
             <label className="ru-field">Choose PDF, PNG, or JPEG<input id="borrower-other-document-file" type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" onChange={(event) => setOtherFile(event.target.files?.[0] || null)} /></label>
           </div>
-          <div className="ru-upload-actions"><small>Up to 12 MB per file · encrypted in local demo storage</small><button type="button" className="ru-secondary-button" disabled={!complete || !otherFile || busy} onClick={() => upload(otherCategory, otherFile)}>{busy ? "Working…" : "Upload supporting document"}</button></div>
+          <div className="ru-upload-actions"><small>Up to 12 MB per file · encrypted in local demo storage</small><button type="button" className="ru-secondary-button" disabled={!otherFile || busy} onClick={() => upload(otherCategory, otherFile)}>{busy ? "Working…" : "Upload supporting document"}</button></div>
           <div className="ru-demo-samples"><strong>Trying the demo?</strong><span>Download fictional, invalid samples marked “NOT A REAL DOCUMENT”:</span><div><a href="/demo-documents/synthetic-demo-pan-identity.pdf" download>Identity</a><a href="/demo-documents/synthetic-demo-bank-statement.pdf" download>Bank statement</a><a href="/demo-documents/synthetic-demo-tax-summary.pdf" download>Tax summary</a></div></div>
           <div className="ru-storage-note"><strong>Document analysis in this demo.</strong> Files are encrypted. When you request an estimate, selectable PDF text is extracted, common PAN/account/phone identifiers are masked, and the remaining text is sent to configured Luna for evidence review. Image and scanned-PDF OCR is unavailable here. Extraction is not verification; a lender must inspect the original file.</div>
-          {!complete && <div className="ru-document-state">Complete your name, city, and monthly income, expenses, and debt before saving or uploading.</div>}
+          {!complete && <div className="ru-document-state">You can upload documents now. Add your name, city, and monthly income, expenses, and debt before requesting an estimate. No loan amount or purpose is required.</div>}
           {complete && !documentsComplete && <div className="ru-document-state">Still required: {missingRequiredDocuments.map(([, label]) => label).join(", ")}.</div>}
           {notice && <div className="ru-document-state is-success" role="status">{notice}</div>}
           {error && <div className="ru-document-state is-error" role="alert">{error}</div>}
