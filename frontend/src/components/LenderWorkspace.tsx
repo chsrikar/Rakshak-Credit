@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowDownToLine, ArrowLeft, ArrowRight, FileCheck2, RefreshCw, ShieldCheck, UserRound, LogOut, ClipboardCheck } from "lucide-react";
 import { getDemoUser, signOutDemo } from "../services/demoAuth";
-import { downloadUnderwritingDocument, fetchUnderwritingDocumentText, fetchLenderApplications, updateLenderReviewStatus, type ExtractedDocumentText, type LenderApplicationRecord } from "../services/neuralScoring";
+import { downloadUnderwritingDocument, fetchUnderwritingDocumentText, fetchLenderApplications, updateLenderReviewStatus, fetchUnderwritingAnalysis, type ExtractedDocumentText, type LenderApplicationRecord, type UnderwritingAnalysisResponse } from "../services/neuralScoring";
 import "../styles/lender-workspace.css";
 
 const labels: Record<string, string> = {
@@ -25,6 +25,7 @@ export default function LenderWorkspace() {
   const [updatingReview, setUpdatingReview] = useState("");
   const [readingDocument, setReadingDocument] = useState("");
   const [documentText, setDocumentText] = useState<Record<string, ExtractedDocumentText>>({});
+  const [runningEstimate, setRunningEstimate] = useState("");
   const user = getDemoUser();
 
   const refresh = async () => {
@@ -64,6 +65,34 @@ export default function LenderWorkspace() {
       setDocumentText((current) => ({ ...current, [file.id]: extracted }));
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not read document text."); }
     finally { setReadingDocument(""); }
+  };
+
+  const runEstimate = async (record: LenderApplicationRecord) => {
+    setRunningEstimate(record.application_id); setError("");
+    try {
+      const form = record.application as Record<string, unknown>;
+      const result = await fetchUnderwritingAnalysis({
+        applicationId: record.application_id,
+        borrowerName: String(form.borrower_name || "Applicant"),
+        occupation: String(form.occupation || "not_specified"),
+        businessName: String(form.business_name || ""),
+        city: String(form.city || ""),
+        monthlyInflow: Number(form.monthly_inflow || 0),
+        monthlyExpenses: Number(form.monthly_expenses || 0),
+        existingDebt: Number(form.existing_debt || 0),
+        requestedAmount: form.requested_amount ? String(form.requested_amount) : "",
+        purpose: String(form.purpose || "other"),
+        evidence: String(form.evidence || "self_reported"),
+        notes: String(form.notes || ""),
+      });
+      // Update local state with new analysis
+      setItems((current) => current.map((item) =>
+        item.application_id === record.application_id
+          ? { ...item, analyses: [{ id: result.correlation_id, created_at: new Date().toISOString(), analysis: result as any }, ...item.analyses] }
+          : item
+      ));
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not run the underwriting estimate."); }
+    finally { setRunningEstimate(""); }
   };
 
   return <main className="lender-page">
@@ -109,9 +138,21 @@ export default function LenderWorkspace() {
           </div>
 
           <div className="lender-analysis lender-analysis-full">
-            <div className="lender-subhead"><span>Underwriting analysis</span><small>{analysis?.status || "Estimate not run"}</small></div>
-            {!analysis && <p>No saved analysis is available. The borrower can run the estimate after completing their profile.</p>}
+            <div className="lender-subhead"><span>Underwriting analysis</span><div className="lender-analysis-actions"><small>{analysis?.status || "Estimate not run"}</small><button className="lender-run-estimate" onClick={() => void runEstimate(record)} disabled={runningEstimate === record.application_id}><RefreshCw size={13} /> {runningEstimate === record.application_id ? "Running…" : analysis ? "Re-run estimate" : "Run estimate"}</button></div></div>
+            {!analysis && <p>No saved analysis is available. Click “Run estimate” to generate the underwriting analysis.</p>}
             {analysis && <>
+              <div className="lender-score-summary">
+                <div className="lender-score-card">
+                  <span className="lender-score-label">ILLUSTRATIVE AMOUNT RANGE</span>
+                  <strong className="lender-score-value">{money(finance?.illustrative_capacity_range_inr?.minimum ?? 0)} – {money(finance?.illustrative_capacity_range_inr?.maximum ?? finance?.principal_within_illustrative_capacity)}</strong>
+                  <small>Based on reported cash flow, {finance?.tenure_months || 12}-month term, {finance?.annual_interest_rate_pct || 18}% rate, and deterministic affordability arithmetic. Not an offer.</small>
+                </div>
+                <div className="lender-score-card">
+                  <span className="lender-score-label">EXPERIMENTAL SCORE · OUT OF 100</span>
+                  <strong className={`lender-score-value ${analysis.lightgbm_scoring?.rakshak_score != null ? (Math.round(((analysis.lightgbm_scoring.rakshak_score - 300) / 600) * 100) >= 70 ? "score-good" : Math.round(((analysis.lightgbm_scoring.rakshak_score - 300) / 600) * 100) >= 40 ? "score-medium" : "score-poor") : ""}`}>{analysis.lightgbm_scoring?.rakshak_score != null ? `${Math.round(((analysis.lightgbm_scoring.rakshak_score - 300) / 600) * 100)} / 100` : "Not available"}</strong>
+                  <small>{analysis.lightgbm_scoring?.rakshak_score != null ? `Rakshak model score ${analysis.lightgbm_scoring.rakshak_score} (300–900) scaled to 0–100. ${analysis.lightgbm_scoring.risk_tier || ""}` : "No source-backed model feature set was supplied."}</small>
+                </div>
+              </div>
               <p className="lender-analysis-warning">Experimental, synthetic-data support only. Not an approval or rejection. Independently verify borrower statements and documents.</p>
               <div className="lender-analysis-grid">
                 <section><h3>Backend financial calculations</h3><div className="lender-stat-grid">

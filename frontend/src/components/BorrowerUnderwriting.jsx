@@ -13,6 +13,12 @@ const OCCUPATIONS = [
   ["service", "Freelance / service income"], ["startup", "Starting a business"],
   ["not_employed", "No current occupation"], ["other", "Other income source"],
 ];
+const LOAN_PURPOSES = [
+  ["working_capital", "Working capital"], ["inventory", "Inventory / stock"],
+  ["equipment", "Tools or equipment"], ["business_expansion", "Business expansion"],
+  ["education", "Education"], ["healthcare", "Healthcare"], ["home_improvement", "Home improvement"],
+  ["personal", "Personal expense"], ["other", "Other purpose"],
+];
 const DOCUMENT_TYPES = [
   ["identity_pan", "PAN / identity"], ["bank_statement", "Bank statement / account history"],
   ["tax_return", "Income tax return (ITR)"], ["other", "Other supporting document"],
@@ -32,7 +38,7 @@ const money = (value) => Number.isFinite(Number(value))
 export default function BorrowerUnderwriting() {
   const navigate = useNavigate();
   const user = getDemoUser();
-  const [form, setForm] = useState({ borrowerName: "", occupation: "not_employed", businessName: "", city: "", monthlyInflow: "", monthlyExpenses: "", existingDebt: "0", evidence: "self_reported", notes: "" });
+  const [form, setForm] = useState({ borrowerName: "", occupation: "not_employed", businessName: "", city: "", monthlyInflow: "", monthlyExpenses: "", existingDebt: "0", requestedAmount: "", purpose: "", evidence: "self_reported", notes: "" });
   const [applicationId, setApplicationId] = useState(null);
   const [draftSaved, setDraftSaved] = useState(false);
   const [documents, setDocuments] = useState([]);
@@ -53,6 +59,7 @@ export default function BorrowerUnderwriting() {
   const complete = Boolean(form.borrowerName.trim() && form.occupation && form.city.trim() &&
     form.monthlyInflow !== "" && form.monthlyExpenses !== "" && form.existingDebt !== "" &&
     [form.monthlyInflow, form.monthlyExpenses, form.existingDebt].every((x) => Number.isFinite(Number(x)) && Number(x) >= 0));
+
   const uploadedCategories = new Set(documents.map((item) => item.category));
   const missingRequiredDocuments = REQUIRED_DOCUMENTS.filter(([categoryName]) => !uploadedCategories.has(categoryName));
   const documentsComplete = missingRequiredDocuments.length === 0;
@@ -155,7 +162,15 @@ export default function BorrowerUnderwriting() {
         </div>
         <p className="ru-section-intro">Use your best monthly estimate. If you currently have no occupation or are starting a business, enter your current income as zero and explain relevant context to your lender.</p>
         <div className="ru-section-divider" />
-        <div className="ru-panel-heading"><div><div className="ru-eyebrow">STEP 03</div><h2>Required documents</h2></div><span className="ru-step">All 3 required</span></div>
+        <div className="ru-section-divider" />
+        <div className="ru-panel-heading"><div><div className="ru-eyebrow">STEP 03</div><h2>Loan request</h2></div><span className="ru-step">Amount or purpose</span></div>
+        <p className="ru-section-intro">Enter the amount you need, choose what the loan is for, or provide both. You can leave the amount blank if you are still deciding.</p>
+        <div className="ru-grid two">
+          <label className="ru-field">Requested amount <span>(optional if purpose selected)</span><input type="number" min="1" max="10000000" value={form.requestedAmount} onChange={(event) => setField("requestedAmount", event.target.value)} placeholder="Amount in INR" /></label>
+          <label className="ru-field">Loan purpose <span>(optional if amount entered)</span><select value={form.purpose} onChange={(event) => setField("purpose", event.target.value)}><option value="">Choose a purpose</option>{LOAN_PURPOSES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+        </div>
+        <div className="ru-section-divider" />
+        <div className="ru-panel-heading"><div><div className="ru-eyebrow">STEP 04</div><h2>Required documents</h2></div><span className="ru-step">All 3 required</span></div>
         <p className="ru-section-intro">Upload each required document before requesting an estimate. Business registration is not required for salaried applicants, people between jobs, or new businesses.</p>
         <div className="ru-required-documents" aria-label="Required borrower documents">{REQUIRED_DOCUMENTS.map(([requiredCategory, label]) => <div className="ru-required-document" key={requiredCategory}><span className={uploadedCategories.has(requiredCategory) ? "is-uploaded" : ""}>{uploadedCategories.has(requiredCategory) ? "✓" : "!"}</span><strong>{label}</strong><small>{uploadedCategories.has(requiredCategory) ? "Received" : "Required"}</small></div>)}</div>
         <div className="ru-required-upload-grid" aria-label="Upload each required document">
@@ -177,7 +192,7 @@ export default function BorrowerUnderwriting() {
           <div className="ru-upload-actions"><small>Up to 12 MB per file · encrypted in local demo storage</small><button type="button" className="ru-secondary-button" disabled={!otherFile || busy} onClick={() => upload(otherCategory, otherFile)}>{busy ? "Working…" : "Upload supporting document"}</button></div>
           <div className="ru-demo-samples"><strong>Trying the demo?</strong><span>Download fictional, invalid samples marked “NOT A REAL DOCUMENT”:</span><div><a href="/demo-documents/synthetic-demo-pan-identity.pdf" download>Identity</a><a href="/demo-documents/synthetic-demo-bank-statement.pdf" download>Bank statement</a><a href="/demo-documents/synthetic-demo-tax-summary.pdf" download>Tax summary</a></div></div>
           <div className="ru-storage-note"><strong>Document analysis in this demo.</strong> Files are encrypted. When you request an estimate, selectable PDF text is extracted, common PAN/account/phone identifiers are masked, and the remaining text is sent to configured Luna for evidence review. Image and scanned-PDF OCR is unavailable here. Extraction is not verification; a lender must inspect the original file.</div>
-          {!complete && <div className="ru-document-state">You can upload documents now. Add your name, city, and monthly income, expenses, and debt before requesting an estimate. No loan amount or purpose is required.</div>}
+          {!complete && <div className="ru-document-state">You can upload documents now. Add your name, city, and monthly income, expenses, and debt before requesting an estimate.</div>}
           {complete && !documentsComplete && <div className="ru-document-state">Still required: {missingRequiredDocuments.map(([, label]) => label).join(", ")}.</div>}
           {notice && <div className="ru-document-state is-success" role="status">{notice}</div>}
           {error && <div className="ru-document-state is-error" role="alert">{error}</div>}
@@ -188,7 +203,7 @@ export default function BorrowerUnderwriting() {
 
       <aside className="ru-side">
         <div className="ru-sticky">
-          <div className="ru-eyebrow">STEP 04 · OPTIONAL ESTIMATE</div><h2>Your estimate</h2>
+          <div className="ru-eyebrow">STEP 05 · ESTIMATE</div><h2>Your estimate</h2>
           <p className="ru-section-intro">Once your profile and all required documents are provided, see an illustrative borrowing-capacity range and any experimental score the backend can calculate from complete source-backed data.</p>
           <button type="button" className="ru-primary-button ru-estimate-button" disabled={!complete || !documentsComplete || busy} onClick={getEstimate}>{busy ? "Calculating…" : "Predict my amount & score"}</button>
           {complete && !documentsComplete && <small className="ru-validation">Upload all 3 required documents before calculating your estimate.</small>}

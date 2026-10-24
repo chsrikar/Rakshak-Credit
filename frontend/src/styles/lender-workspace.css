@@ -53,3 +53,18 @@
 @media(max-width:720px){.lender-analysis-grid{grid-template-columns:1fr}.lender-component-status>div{grid-template-columns:1fr auto}.lender-component-status small{grid-column:1/-1}.lender-review-actions{align-items:stretch;flex-direction:column}.lender-review-actions button{justify-content:center}}
 
 .lender-document-wrap{border-top:1px solid #292c25}.lender-document-wrap .lender-document{border-top:0}.lender-document .lender-document-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}.lender-extracted-text{margin:0 0 10px;padding:12px;border:1px solid #45483c;background:#141713}.lender-extracted-text strong{color:#cde4b8;font-size:10px;text-transform:uppercase}.lender-extracted-text p{max-height:280px;overflow:auto;margin:8px 0;color:#d4d5cb;font:11px/1.6 'DM Mono',monospace;white-space:pre-wrap;overflow-wrap:anywhere}.lender-extracted-text small{color:#a7aa9c;font-size:9px}.lender-extracted-text.ocr_unavailable,.lender-extracted-text.error,.lender-extracted-text.unsupported{border-color:#776231}.lender-extracted-text.ocr_unavailable strong,.lender-extracted-text.error strong,.lender-extracted-text.unsupported strong{color:#f1d78a}
+
+.lender-analysis-actions{display:flex;align-items:center;gap:12px}
+.lender-run-estimate{display:inline-flex;align-items:center;gap:6px;border:1px solid #59614e;padding:6px 12px;background:#1d221a;color:#b9e3a4;font:600 11px 'DM Sans',sans-serif;cursor:pointer;border-radius:2px;transition:background .15s,border-color .15s}
+.lender-run-estimate:hover:not(:disabled){background:#252c21;border-color:#738066}
+.lender-run-estimate:disabled{opacity:.5;cursor:wait}
+.lender-score-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0 14px}
+.lender-score-card{padding:14px 16px;border:1px solid #383b31;background:#141713;display:flex;flex-direction:column;gap:6px}
+.lender-score-label{color:#a7aa9c;font:9px 'DM Mono',monospace;letter-spacing:.08em;text-transform:uppercase}
+.lender-score-value{font:700 24px/1.1 Manrope,sans-serif;color:#f0f0e9}
+.lender-score-value.score-good{color:#b9e3a4}
+.lender-score-value.score-medium{color:#f1d78a}
+.lender-score-value.score-poor{color:#ffab94}
+.lender-score-card small{color:#777b70;font-size:10px;line-height:1.5}
+@media(max-width:720px){.lender-score-summary{grid-template-columns:1fr}}
+

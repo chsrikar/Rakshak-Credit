@@ -440,7 +440,10 @@ export async function fetchUnderwritingAnalysis(form: UnderwritingFormData): Pro
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `Server responded with HTTP ${response.status}`);
+        const detailMsg = typeof errorData.detail === "string"
+          ? errorData.detail
+          : (errorData.detail?.message || (errorData.detail ? JSON.stringify(errorData.detail) : `Server responded with HTTP ${response.status}`));
+        throw new Error(detailMsg);
       }
 
       const data: UnderwritingAnalysisResponse = await response.json();
