@@ -1,0 +1,32 @@
+{
+  "dataset": "held_out_synthetic_test_set",
+  "n_samples": 225,
+  "n_positive": 60,
+  "models": {
+    "lightgbm_baseline": {
+      "name": "LightGBM Gradient Boosted Trees",
+      "feature_count": 26,
+      "threshold": 0.2,
+      "roc_auc": 0.6411,
+      "accuracy": 0.4622,
+      "precision": 0.3057,
+      "recall": 0.8,
+      "f1": 0.4424,
+      "brier_score": 0.1861,
+      "review_rate": 0.6978
+    },
+    "deep_tabular_net": {
+      "name": "Rakshak Deep Tabular Neural Network (4-block ResNet)",
+      "feature_count": 77,
+      "threshold": 0.28,
+      "roc_auc": 0.5904,
+      "accuracy": 0.7289,
+      "precision": 0.3333,
+      "recall": 0.0167,
+      "f1": 0.0317,
+      "brier_score": 0.2031,
+      "review_rate": 0.0133
+    }
+  },
+  "regulatory_disclaimer": "All metrics evaluated on synthetic cash-flow labels. Neither model provides validated default probabilities for automated production lending."
+}

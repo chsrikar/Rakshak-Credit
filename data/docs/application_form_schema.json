@@ -1,0 +1,82 @@
+{
+  "notice": "Illustrative demo schema only; use data minimization and explicit consent in production.",
+  "common_fields": {
+    "occupation_type": [
+      "gig_worker",
+      "small_shopkeeper"
+    ],
+    "work_location": {
+      "state": "string",
+      "city": "string",
+      "work_zone_type": [
+        "urban",
+        "semi_urban",
+        "rural"
+      ]
+    },
+    "loan_purpose_category": [
+      "working_capital",
+      "vehicle_repair",
+      "equipment",
+      "inventory",
+      "education",
+      "medical",
+      "home_expense",
+      "business_improvement"
+    ],
+    "loan_purpose_text": "optional string; display/review only, not direct model input",
+    "requested_loan_amount_inr": "number",
+    "requested_tenure_months": "integer",
+    "self_reported_monthly_income_inr": "number",
+    "self_reported_monthly_essential_expenses_inr": "number",
+    "self_reported_existing_monthly_debt_inr": "number",
+    "consent": {
+      "status": "explicit opt-in; timestamp, scope and revocation should be recorded in production"
+    },
+    "evidence_sources": [
+      "bank_or_AA_feed",
+      "platform_statement",
+      "sales_ledger",
+      "self_reported"
+    ]
+  },
+  "gig_worker_fields": {
+    "work_type": "delivery_partner | ride_hailing_driver | freelance_service | field_sales | home_service",
+    "platform_or_employer": "optional string; metadata only in starter model",
+    "months_in_occupation": "integer",
+    "workdays_per_month": "integer",
+    "typical_daily_gross_earnings_inr": "number",
+    "typical_weekly_gross_earnings_inr": "number",
+    "monthly_work_costs_inr": "number",
+    "monthly_household_essential_expenses_inr": "number",
+    "existing_monthly_debt_payment_inr": "number",
+    "income_source_count_self_reported": "integer",
+    "earnings_evidence_type": "platform_statement | bank_transaction_pattern | self_reported"
+  },
+  "shopkeeper_fields": {
+    "business_type": "string category",
+    "business_age_months": "integer",
+    "premises_type": "owned | rented",
+    "monthly_rent_inr": "number",
+    "estimated_daily_customer_count": "integer",
+    "estimated_average_bill_inr": "number",
+    "estimated_days_open_per_month": "integer",
+    "estimated_daily_sales_inr": "number",
+    "estimated_monthly_sales_inr": "number",
+    "estimated_monthly_inventory_purchases_inr": "number",
+    "estimated_monthly_operating_costs_inr": "number",
+    "supplier_outstanding_inr": "number",
+    "estimated_cashless_sales_ratio": "0 to 1",
+    "monthly_household_essential_expenses_inr": "number",
+    "existing_monthly_debt_payment_inr": "number",
+    "sales_evidence_type": "sales_ledger | bank_transaction_pattern | self_reported"
+  },
+  "model_guardrails": [
+    "Do not use applicant_id as a feature.",
+    "Do not use split as a feature.",
+    "Never use synthetic_target_probability_for_documentation_only as a feature.",
+    "Do not feed free text, city, state or work zone into the starter model.",
+    "Keep affordability and lending policy separate from model probability.",
+    "All generated repayment labels are synthetic and are not observed outcomes."
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "synthetic_only": true,
+  "seed": 42,
+  "applicants": 1500,
+  "gig_workers": 860,
+  "shopkeepers": 640,
+  "transactions": 426630,
+  "months_of_transactions": 6,
+  "model_feature_count": 26,
+  "target_counts": {
+    "0": 1104,
+    "1": 396
+  },
+  "split_counts": {
+    "train": 1050,
+    "test": 225,
+    "validation": 225
+  },
+  "model_features": [
+    "avg_monthly_income",
+    "median_monthly_income",
+    "income_cv",
+    "positive_income_months_ratio",
+    "income_trend",
+    "avg_monthly_expenses",
+    "essential_expense_ratio",
+    "savings_ratio",
+    "avg_closing_balance",
+    "low_balance_days_ratio",
+    "net_cash_flow_6m",
+    "negative_cash_flow_months_ratio",
+    "income_source_concentration",
+    "transaction_regularity",
+    "cash_flow_coverage_ratio",
+    "occupation_gig_worker",
+    "requested_loan_amount_inr",
+    "requested_tenure_months",
+    "self_reported_monthly_essential_expenses_inr",
+    "self_reported_existing_monthly_debt_inr",
+    "months_in_occupation",
+    "workdays_per_month",
+    "monthly_work_costs_inr",
+    "occupation_numeric_1",
+    "occupation_numeric_2",
+    "context_data_completeness"
+  ],
+  "warnings": [
+    "No real repayment outcomes are present; the target is synthetic.",
+    "The displayed score/limit must be labeled as an estimate, not approval or a CIBIL score.",
+    "Do not feed free text or location into the starter model.",
+    "The affordability calculation should be a separate policy layer from ML."
+  ]
+}

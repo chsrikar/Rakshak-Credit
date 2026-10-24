@@ -1,0 +1,6 @@
+model,features,threshold_from_validation,validation_f1_at_selected_threshold,test_roc_auc,test_pr_auc_average_precision,test_accuracy,test_precision,test_recall,test_f1,test_brier_score,test_tn,test_fp,test_fn,test_tp
+GradientBoosting,26,0.21,0.5171,0.6734,0.4226,0.4933,0.3247,0.8333,0.4673,0.1815,61,104,10,50
+LogisticRegression,26,0.46,0.5024,0.6471,0.3782,0.5378,0.3472,0.8333,0.4902,0.2348,71,94,10,50
+ExtraTrees,26,0.3,0.48,0.6452,0.3563,0.4667,0.3148,0.85,0.4595,0.2048,54,111,9,51
+RandomForest,26,0.34,0.4785,0.6388,0.3671,0.5067,0.3311,0.8333,0.4739,0.2087,64,101,10,50
+HistGradientBoosting,26,0.1,0.4753,0.593,0.3485,0.48,0.3185,0.8333,0.4608,0.2141,58,107,10,50

@@ -1,0 +1,21 @@
+{
+  "threshold": 0.3911111111111111,
+  "accuracy": 0.4533333333333333,
+  "balanced_accuracy": 0.5848484848484848,
+  "precision": 0.31137724550898205,
+  "recall": 0.8666666666666667,
+  "f1": 0.4581497797356828,
+  "f2": 0.6388206388206388,
+  "roc_auc": 0.6336868686868686,
+  "pr_auc": 0.3917589435006359,
+  "brier": 0.22639675457542233,
+  "tn": 50,
+  "fp": 115,
+  "fn": 8,
+  "tp": 52,
+  "positive_rate": 0.26666666666666666,
+  "majority_baseline_accuracy": 0.7333333333333334,
+  "dataset": "Rakshak synthetic",
+  "target": "synthetic_missed_payment",
+  "synthetic_only": true
+}

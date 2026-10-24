@@ -1,0 +1,61 @@
+{
+  "synthetic_only": true,
+  "target": "synthetic_missed_payment",
+  "target_meaning": "Generated synthetic label; not a real repayment outcome",
+  "test_rows": 225,
+  "test_positive_count": 60,
+  "test_positive_rate": 0.26666666666666666,
+  "threshold": 0.5,
+  "best_iteration": 55,
+  "accuracy": 0.7377777777777778,
+  "precision": 0.6666666666666666,
+  "recall": 0.03333333333333333,
+  "f1": 0.06349206349206349,
+  "brier_score": 0.18607533780559385,
+  "confusion_matrix_labels": [
+    "actual_0",
+    "actual_1"
+  ],
+  "confusion_matrix": [
+    [
+      164,
+      1
+    ],
+    [
+      58,
+      2
+    ]
+  ],
+  "feature_count": 26,
+  "features": [
+    "avg_monthly_income",
+    "median_monthly_income",
+    "income_cv",
+    "positive_income_months_ratio",
+    "income_trend",
+    "avg_monthly_expenses",
+    "essential_expense_ratio",
+    "savings_ratio",
+    "avg_closing_balance",
+    "low_balance_days_ratio",
+    "net_cash_flow_6m",
+    "negative_cash_flow_months_ratio",
+    "income_source_concentration",
+    "transaction_regularity",
+    "cash_flow_coverage_ratio",
+    "occupation_gig_worker",
+    "requested_loan_amount_inr",
+    "requested_tenure_months",
+    "self_reported_monthly_essential_expenses_inr",
+    "self_reported_existing_monthly_debt_inr",
+    "months_in_occupation",
+    "workdays_per_month",
+    "monthly_work_costs_inr",
+    "occupation_numeric_1",
+    "occupation_numeric_2",
+    "context_data_completeness"
+  ],
+  "warning": "Metrics measure performance on synthetic labels only. They do not establish real-world credit-risk performance. Predicted scores are not validated default probabilities.",
+  "roc_auc": 0.6410606060606061,
+  "average_precision": 0.38513295672570313
+}
