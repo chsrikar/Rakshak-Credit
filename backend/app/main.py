@@ -26,6 +26,7 @@ from .database import (
     get_underwriting_application_payload, list_underwriting_applications,
     list_applications_for_owner,
     get_encrypted_underwriting_document, list_underwriting_analyses,
+    get_underwriting_document_categories,
     set_underwriting_review_status,
 )
 from .document_storage import encrypt_document, decrypt_document
@@ -50,6 +51,9 @@ MAX_UNDERWRITING_DOCUMENT_BYTES = 12 * 1024 * 1024
 DOCUMENT_CATEGORIES = {
     "identity_pan", "bank_statement", "tax_return", "gst_record",
     "business_registration", "income_invoice", "platform_statement", "other",
+}
+REQUIRED_BORROWER_DOCUMENT_CATEGORIES = {
+    "identity_pan", "bank_statement", "tax_return",
 }
 
 
@@ -277,6 +281,17 @@ async def analyze_underwriting(
     try:
         if payload.application_id:
             require_application_access(payload.application_id, principal)
+            if principal.role == "borrower":
+                uploaded_categories = set(get_underwriting_document_categories(payload.application_id))
+                missing_categories = sorted(REQUIRED_BORROWER_DOCUMENT_CATEGORIES - uploaded_categories)
+                if missing_categories:
+                    raise HTTPException(
+                        status_code=422,
+                        detail={
+                            "message": "Upload all required borrower documents before requesting an estimate.",
+                            "missing_document_categories": missing_categories,
+                        },
+                    )
             save_underwriting_application(
                 payload.application_id,
                 payload.model_dump(exclude={"application_id", "neural_features", "neural_feature_sources", "lightgbm_features", "lightgbm_feature_sources"}),
@@ -296,6 +311,8 @@ async def analyze_underwriting(
                 )
                 analysis.status = "partial"
         return analysis
+    except HTTPException:
+        raise
     except Exception:
         logger.exception("Unhandled underwriting error correlation_id=%s", correlation_id)
         raise HTTPException(

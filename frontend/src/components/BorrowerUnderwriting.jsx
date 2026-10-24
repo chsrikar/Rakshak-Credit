@@ -15,9 +15,15 @@ const OCCUPATIONS = [
 ];
 const DOCUMENT_TYPES = [
   ["identity_pan", "PAN / identity"], ["bank_statement", "Bank statement / account history"],
-  ["tax_return", "Income tax return (ITR)"], ["gst_record", "GST return / registration"],
+  ["tax_return", "Income tax return (ITR)"], ["other", "Other supporting document"],
+  ["gst_record", "GST return / registration"],
   ["business_registration", "Business registration / licence"], ["income_invoice", "Payslip / invoices / contracts"],
-  ["platform_statement", "Platform / gig income statement"], ["other", "Other supporting evidence"],
+  ["platform_statement", "Platform / gig income statement"],
+];
+const REQUIRED_DOCUMENTS = [
+  ["identity_pan", "PAN / identity"],
+  ["bank_statement", "Bank statement / account history"],
+  ["tax_return", "Income tax return (ITR)"],
 ];
 const money = (value) => Number.isFinite(Number(value))
   ? new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(value))
@@ -30,8 +36,9 @@ export default function BorrowerUnderwriting() {
   const [applicationId, setApplicationId] = useState(null);
   const [draftSaved, setDraftSaved] = useState(false);
   const [documents, setDocuments] = useState([]);
-  const [category, setCategory] = useState("identity_pan");
-  const [file, setFile] = useState(null);
+  const [requiredFiles, setRequiredFiles] = useState({});
+  const [otherCategory, setOtherCategory] = useState("other");
+  const [otherFile, setOtherFile] = useState(null);
   const [busy, setBusy] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [error, setError] = useState("");
@@ -46,6 +53,9 @@ export default function BorrowerUnderwriting() {
   const complete = Boolean(form.borrowerName.trim() && form.occupation && form.city.trim() &&
     form.monthlyInflow !== "" && form.monthlyExpenses !== "" && form.existingDebt !== "" &&
     [form.monthlyInflow, form.monthlyExpenses, form.existingDebt].every((x) => Number.isFinite(Number(x)) && Number(x) >= 0));
+  const uploadedCategories = new Set(documents.map((item) => item.category));
+  const missingRequiredDocuments = REQUIRED_DOCUMENTS.filter(([categoryName]) => !uploadedCategories.has(categoryName));
+  const documentsComplete = missingRequiredDocuments.length === 0;
 
   const saveDraft = async () => {
     setError("");
@@ -61,17 +71,24 @@ export default function BorrowerUnderwriting() {
     fetchUnderwritingDocuments(applicationId).then(setDocuments).catch((cause) => setError(cause.message || "Could not load evidence files."));
   }, [applicationId]);
 
-  const upload = async () => {
-    if (!file) return;
+  const upload = async (uploadCategory, uploadFile) => {
+    if (!uploadFile) return;
     setBusy(true); setError("");
     try {
       const id = draftSaved && applicationId ? applicationId : await saveDraft();
-      await uploadUnderwritingDocument(id, category, file);
+      await uploadUnderwritingDocument(id, uploadCategory, uploadFile);
       setDocuments(await fetchUnderwritingDocuments(id));
-      setFile(null);
-      const picker = document.getElementById("borrower-document-file");
-      if (picker) picker.value = "";
-      setNotice("Evidence uploaded and encrypted. A lender must verify it; its contents are not currently read by the AI models.");
+      setAnalysis(null);
+      if (REQUIRED_DOCUMENTS.some(([requiredCategory]) => requiredCategory === uploadCategory)) {
+        setRequiredFiles((current) => ({ ...current, [uploadCategory]: null }));
+        const picker = document.getElementById(`borrower-document-${uploadCategory}`);
+        if (picker) picker.value = "";
+      } else {
+        setOtherFile(null);
+        const picker = document.getElementById("borrower-other-document-file");
+        if (picker) picker.value = "";
+      }
+      setNotice("Evidence uploaded and encrypted. It will be text-extracted and sent to Luna only when you request an estimate.");
     } catch (cause) { setError(cause.message || "Upload failed."); }
     finally { setBusy(false); }
   };
@@ -82,12 +99,13 @@ export default function BorrowerUnderwriting() {
     try {
       await removeUnderwritingDocument(applicationId, id);
       setDocuments(await fetchUnderwritingDocuments(applicationId));
+      setAnalysis(null);
       setNotice("Evidence file removed.");
     } catch (cause) { setError(cause.message || "Could not remove that file."); }
   };
 
   const getEstimate = async () => {
-    if (!complete) return;
+    if (!complete || !documentsComplete) return;
     setBusy(true); setError(""); setNotice("");
     try {
       const id = draftSaved && applicationId ? applicationId : await saveDraft();
@@ -135,17 +153,30 @@ export default function BorrowerUnderwriting() {
         </div>
         <p className="ru-section-intro">Use your best monthly estimate. If you currently have no occupation or are starting a business, enter your current income as zero and explain relevant context to your lender.</p>
         <div className="ru-section-divider" />
-        <div className="ru-panel-heading"><div><div className="ru-eyebrow">STEP 03</div><h2>Documents &amp; evidence</h2></div><span className="ru-step">Add what applies</span></div>
-        <p className="ru-section-intro">Identity and income evidence can help a lender review your application. Business registration is not expected from a salaried person, someone between jobs, or a new business.</p>
+        <div className="ru-panel-heading"><div><div className="ru-eyebrow">STEP 03</div><h2>Required documents</h2></div><span className="ru-step">All 3 required</span></div>
+        <p className="ru-section-intro">Upload each required document before requesting an estimate. Business registration is not required for salaried applicants, people between jobs, or new businesses.</p>
+        <div className="ru-required-documents" aria-label="Required borrower documents">{REQUIRED_DOCUMENTS.map(([requiredCategory, label]) => <div className="ru-required-document" key={requiredCategory}><span className={uploadedCategories.has(requiredCategory) ? "is-uploaded" : ""}>{uploadedCategories.has(requiredCategory) ? "✓" : "!"}</span><strong>{label}</strong><small>{uploadedCategories.has(requiredCategory) ? "Received" : "Required"}</small></div>)}</div>
+        <div className="ru-required-upload-grid" aria-label="Upload each required document">
+          {REQUIRED_DOCUMENTS.map(([requiredCategory, label]) => {
+            const uploaded = uploadedCategories.has(requiredCategory);
+            return <div className={`ru-required-upload-card${uploaded ? " is-uploaded" : ""}`} key={requiredCategory}>
+              <div className="ru-required-upload-heading"><strong>{label}</strong><small>{uploaded ? "Received" : "Required"}</small></div>
+              <label className="ru-field">Choose PDF, PNG, or JPEG<input id={`borrower-document-${requiredCategory}`} type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" onChange={(event) => setRequiredFiles((current) => ({ ...current, [requiredCategory]: event.target.files?.[0] || null }))} /></label>
+              <button type="button" className="ru-secondary-button" disabled={!complete || !requiredFiles[requiredCategory] || busy} onClick={() => upload(requiredCategory, requiredFiles[requiredCategory])}>{busy ? "Working…" : uploaded ? "Upload another" : `Upload ${label}`}</button>
+            </div>;
+          })}
+        </div>
         <div className="ru-document-upload">
+          <div className="ru-panel-heading"><div><div className="ru-eyebrow">OPTIONAL EVIDENCE</div><h3>Other supporting documents</h3></div></div>
           <div className="ru-document-fields">
-            <label className="ru-field">Evidence type<select value={category} onChange={(event) => setCategory(event.target.value)}>{DOCUMENT_TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-            <label className="ru-field">Choose PDF, PNG, or JPEG<input id="borrower-document-file" type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" onChange={(event) => setFile(event.target.files?.[0] || null)} /></label>
+            <label className="ru-field">Evidence type<select value={otherCategory} onChange={(event) => setOtherCategory(event.target.value)}>{DOCUMENT_TYPES.filter(([value]) => !REQUIRED_DOCUMENTS.some(([required]) => required === value)).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            <label className="ru-field">Choose PDF, PNG, or JPEG<input id="borrower-other-document-file" type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" onChange={(event) => setOtherFile(event.target.files?.[0] || null)} /></label>
           </div>
-          <div className="ru-upload-actions"><small>Up to 12 MB per file · encrypted in local demo storage</small><button type="button" className="ru-secondary-button" disabled={!complete || !file || busy} onClick={upload}>{busy ? "Working…" : "Upload evidence"}</button></div>
+          <div className="ru-upload-actions"><small>Up to 12 MB per file · encrypted in local demo storage</small><button type="button" className="ru-secondary-button" disabled={!complete || !otherFile || busy} onClick={() => upload(otherCategory, otherFile)}>{busy ? "Working…" : "Upload supporting document"}</button></div>
           <div className="ru-demo-samples"><strong>Trying the demo?</strong><span>Download fictional, invalid samples marked “NOT A REAL DOCUMENT”:</span><div><a href="/demo-documents/synthetic-demo-pan-identity.pdf" download>Identity</a><a href="/demo-documents/synthetic-demo-bank-statement.pdf" download>Bank statement</a><a href="/demo-documents/synthetic-demo-tax-summary.pdf" download>Tax summary</a></div></div>
           <div className="ru-storage-note"><strong>Document analysis in this demo.</strong> Files are encrypted. When you request an estimate, selectable PDF text is extracted, common PAN/account/phone identifiers are masked, and the remaining text is sent to configured Luna for evidence review. Image and scanned-PDF OCR is unavailable here. Extraction is not verification; a lender must inspect the original file.</div>
           {!complete && <div className="ru-document-state">Complete your name, city, and monthly income, expenses, and debt before saving or uploading.</div>}
+          {complete && !documentsComplete && <div className="ru-document-state">Still required: {missingRequiredDocuments.map(([, label]) => label).join(", ")}.</div>}
           {notice && <div className="ru-document-state is-success" role="status">{notice}</div>}
           {error && <div className="ru-document-state is-error" role="alert">{error}</div>}
           {documents.length > 0 && <div className="ru-document-list" aria-label="Uploaded evidence">{documents.map((item) => <div className="ru-document-item" key={item.id}><span className="ru-document-icon">PDF</span><span><strong>{DOCUMENT_TYPES.find(([value]) => value === item.category)?.[1] || "Supporting evidence"}</strong><small>{(item.size_bytes / (1024 * 1024)).toFixed(2)} MB · Received, pending review</small></span><button type="button" className="ru-document-remove" onClick={() => remove(item.id)}>Remove</button></div>)}</div>}
@@ -156,8 +187,9 @@ export default function BorrowerUnderwriting() {
       <aside className="ru-side">
         <div className="ru-sticky">
           <div className="ru-eyebrow">STEP 04 · OPTIONAL ESTIMATE</div><h2>Your estimate</h2>
-          <p className="ru-section-intro">See an illustrative borrowing-capacity range and any experimental score the available backend models can calculate from complete source-backed data.</p>
-          <button type="button" className="ru-primary-button ru-estimate-button" disabled={!complete || busy} onClick={getEstimate}>{busy ? "Calculating…" : "Predict my amount & score"}</button>
+          <p className="ru-section-intro">Once your profile and all required documents are provided, see an illustrative borrowing-capacity range and any experimental score the backend can calculate from complete source-backed data.</p>
+          <button type="button" className="ru-primary-button ru-estimate-button" disabled={!complete || !documentsComplete || busy} onClick={getEstimate}>{busy ? "Calculating…" : "Predict my amount & score"}</button>
+          {complete && !documentsComplete && <small className="ru-validation">Upload all 3 required documents before calculating your estimate.</small>}
           {error && !analysis && <div className="ru-document-state is-error" role="alert">{error}</div>}
           {analysis && <div className="ru-borrower-estimate" aria-live="polite">
             <div className="ru-eyebrow">ILLUSTRATIVE AMOUNT RANGE</div>

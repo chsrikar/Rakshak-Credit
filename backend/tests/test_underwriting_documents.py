@@ -68,6 +68,15 @@ class TestUnderwritingDocumentAPI(unittest.TestCase):
         self.assertEqual(response.status_code, 201, response.text)
         return response.json()["application_id"]
 
+    def upload_required_documents(self, application_id):
+        for category in ("identity_pan", "bank_statement", "tax_return"):
+            response = self.client.post(
+                f"/api/v1/underwriting/applications/{application_id}/documents",
+                data={"category": category},
+                files={"file": (f"{category}.pdf", PDF_FIXTURE, "application/pdf")},
+            )
+            self.assertEqual(response.status_code, 201, response.text)
+
     def test_borrower_profile_can_be_saved_without_loan_request_details(self):
         profile = {key: value for key, value in PAYLOAD.items() if key not in {
             "requested_amount", "purpose", "purpose_details", "tenure_months", "annual_interest_rate_pct",
@@ -122,6 +131,16 @@ class TestUnderwritingDocumentAPI(unittest.TestCase):
         )
         self.assertEqual(removed.status_code, 200)
         self.assertEqual(self.client.get(f"/api/v1/underwriting/applications/{application_id}/documents").json()["items"], [])
+
+    def test_other_supporting_document_can_be_uploaded(self):
+        application_id = self.create_application()
+        response = self.client.post(
+            f"/api/v1/underwriting/applications/{application_id}/documents",
+            data={"category": "other"},
+            files={"file": ("supporting-document.pdf", PDF_FIXTURE, "application/pdf")},
+        )
+        self.assertEqual(response.status_code, 201, response.text)
+        self.assertEqual(response.json()["category"], "other")
 
     def test_upload_rejects_unknown_category_and_invalid_file(self):
         application_id = self.create_application()
@@ -193,6 +212,7 @@ class TestUnderwritingDocumentAPI(unittest.TestCase):
 
     def test_analysis_sends_extracted_document_text_to_luna(self):
         application_id = self.create_application()
+        self.upload_required_documents(application_id)
         extracted = [{
             "document_id": "synthetic-statement-1", "category": "bank_statement",
             "content_type": "application/pdf", "status": "success",
@@ -253,6 +273,7 @@ class TestUnderwritingDocumentAPI(unittest.TestCase):
 
     def test_analysis_result_is_encrypted_and_linked_to_saved_application(self):
         application_id = self.create_application()
+        self.upload_required_documents(application_id)
         payload = {
             **PAYLOAD,
             "application_id": application_id,
@@ -274,6 +295,18 @@ class TestUnderwritingDocumentAPI(unittest.TestCase):
         finally:
             conn.close()
         self.assertNotIn(application_id.encode(), encrypted)
+
+    def test_estimate_requires_identity_bank_statement_and_tax_return(self):
+        application_id = self.create_application()
+        response = self.client.post("/api/v1/underwriting/analyze", json={
+            **PAYLOAD, "application_id": application_id,
+            "include_neural": False, "include_lightgbm": False,
+            "include_gemma": False, "include_luna": False,
+        })
+        self.assertEqual(response.status_code, 422, response.text)
+        self.assertEqual(set(response.json()["detail"]["missing_document_categories"]), {
+            "identity_pan", "bank_statement", "tax_return",
+        })
 
 
 if __name__ == "__main__":

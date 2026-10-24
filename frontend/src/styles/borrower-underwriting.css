@@ -550,3 +550,17 @@
 
 .borrower-simple-layout{grid-template-columns:minmax(0,1.45fr) minmax(270px,.75fr);align-items:start}.ru-estimate-button{margin:14px 0}.ru-borrower-estimate{display:grid;gap:10px;margin-top:14px;padding:17px;border:1px solid #45483c;background:#141713}.ru-borrower-estimate>strong{font:750 22px Manrope,sans-serif;color:#b9e3a4}.ru-borrower-estimate>small{color:#a7aa9c;font-size:11px;line-height:1.55}.ru-demo-samples{display:grid;gap:7px;margin-top:12px;padding:12px 14px;border:1px solid rgba(155,190,154,.25);background:rgba(155,190,154,.045);color:#a9b2a1;font-size:12px}.ru-demo-samples strong{color:#e7e8d9}.ru-demo-samples>div{display:flex;flex-wrap:wrap;gap:8px 16px}.ru-demo-samples a{color:#c9d9b0;text-decoration:underline;text-underline-offset:3px}
 @media(max-width:860px){.borrower-simple-layout{grid-template-columns:1fr}.ru-sticky{position:static}}
+
+.ru-required-documents{display:grid;gap:7px;margin:12px 0 14px}.ru-required-document{display:grid;grid-template-columns:26px 1fr auto;align-items:center;gap:10px;padding:10px 12px;border:1px solid #45483c;background:#141713}.ru-required-document>span{display:grid;place-items:center;width:22px;height:22px;border:1px solid #806b39;color:#f1d78a;font-weight:800}.ru-required-document>span.is-uploaded{border-color:#59614e;color:#b9e3a4}.ru-required-document strong{color:#e3e4d9;font-size:11px}.ru-required-document small{color:#e0c285;font-size:9px;text-transform:uppercase}.ru-required-document:has(.is-uploaded) small{color:#b9e3a4}
+.ru-required-upload-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0}
+.ru-required-upload-card{min-width:0;border:1px solid #45483c;background:#141713;padding:13px}
+.ru-required-upload-card.is-uploaded{border-color:#59614e}
+.ru-required-upload-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:12px}
+.ru-required-upload-heading strong{font-size:11px;color:#e3e4d9}
+.ru-required-upload-heading small{font-size:9px;color:#e0c285;text-transform:uppercase;white-space:nowrap}
+.ru-required-upload-card.is-uploaded .ru-required-upload-heading small{color:#b9e3a4}
+.ru-required-upload-card .ru-field{font-size:10px}
+.ru-required-upload-card input[type=file]{width:100%;min-width:0;margin-top:6px;padding:7px;font-size:10px}
+.ru-required-upload-card .ru-secondary-button{margin-top:10px}
+.ru-document-upload h3{margin:2px 0 0;color:var(--ru-text);font:700 14px Manrope,sans-serif}
+@media(max-width:860px){.ru-required-upload-grid{grid-template-columns:1fr}}
