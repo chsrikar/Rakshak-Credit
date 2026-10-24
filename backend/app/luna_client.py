@@ -19,10 +19,11 @@ from .gemma_client import sanitize_and_check_injection
 
 load_dotenv(Path(__file__).resolve().parents[1] / ".env", override=False)
 
-LUNA_API_URL = os.environ.get("LUNA_API_URL") or os.environ.get("OPENAI_API_URL") or "https://api.openai.com/v1/chat/completions"
+raw_url = os.environ.get("LUNA_API_URL") or os.environ.get("OPENAI_API_URL") or "https://api.openai.com/v1/chat/completions"
+LUNA_API_URL = raw_url if raw_url.startswith("http") else "https://api.openai.com/v1/chat/completions"
 LUNA_API_KEY = os.environ.get("LUNA_API_KEY") or os.environ.get("OPENAI_API_KEY")
 LUNA_MODEL_NAME = os.environ.get("LUNA_MODEL_NAME")
-LUNA_TIMEOUT_SECONDS = float(os.environ.get("LUNA_TIMEOUT_SECONDS", "8"))
+LUNA_TIMEOUT_SECONDS = float(os.environ.get("LUNA_TIMEOUT_SECONDS", "30.0"))
 
 # OpenAI strict Structured Outputs schema. Canonical backend scores are omitted
 # here and injected after validation so the model cannot change them.
@@ -229,7 +230,7 @@ class LunaClient:
         }
         headers = {"Content-Type": "application/json", "Authorization": f"Bearer {self.api_key}"}
         try:
-            timeout = httpx.Timeout(self.timeout, connect=min(self.timeout, 3.0))
+            timeout = httpx.Timeout(self.timeout, connect=min(self.timeout, 15.0))
             async with self.http_client_factory(timeout=timeout) as client:
                 response = await client.post(self.api_url, headers=headers, json=payload)
             latency = int((time.monotonic() - started) * 1000)
@@ -314,7 +315,7 @@ class LunaClient:
             },
         }
         try:
-            timeout = httpx.Timeout(self.timeout, connect=min(self.timeout, 3.0))
+            timeout = httpx.Timeout(self.timeout, connect=min(self.timeout, 15.0))
             async with self.http_client_factory(timeout=timeout) as client:
                 response = await client.post(self.api_url, headers=headers, json=payload)
             latency = int((time.monotonic() - started) * 1000)
